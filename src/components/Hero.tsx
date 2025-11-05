@@ -1,11 +1,19 @@
-import { useState, useEffect } from "react";
-import { ArrowRight, Award, BookOpen, Users } from "lucide-react";
-import { Button } from "./ui/button-variants";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import Lottie from "lottie-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Volume2, VolumeX, Sparkles, Brain, Users, BookOpen, Award } from "lucide-react";
 import { getSupabaseData } from "@/lib/supabaseHelpers";
-import ShinyText from "@/components/ShinyText";
 
-interface HomepageData {
+/**
+ * Redesigned Hero - Umbraxis style
+ * - Uses Supabase content if available (falls back to defaults)
+ * - Interactive cursor glow, Lottie accents, video card with mute toggle
+ * - Stats pulled from homepageData
+ */
+
+type HomepageData = {
   heroTitle: string;
   heroSubtitle: string;
   heroButtonPrimary: string;
@@ -18,148 +26,138 @@ interface HomepageData {
     programs: { number: string; label: string };
     awards: { number: string; label: string };
   };
-  colors: {
-    primary: string;
-    secondary: string;
-    accent: string;
-    background: string;
-    text: string;
-  };
   fonts: {
     heading: string;
     body: string;
   };
-}
+};
 
-const Hero = () => {
-  // State for homepage data
-  const [homepageData, setHomepageData] = useState<HomepageData>({
-    heroTitle: "Royal Academy",
-    heroSubtitle: "Shaping tomorrow's leaders through excellence in education, character development, and innovative learning experiences.",
-    heroButtonPrimary: "Apply for Admission",
-    heroButtonSecondary: "Discover Our Legacy",
-    bannerImages: [],
-    autoRotate: true,
-    rotationInterval: 3,
-    stats: {
-      students: { number: "2,500+", label: "Students" },
-      programs: { number: "150+", label: "Programs" },
-      awards: { number: "25+", label: "Awards" }
+const defaultData: HomepageData = {
+  heroTitle: "Royal Academy",
+  heroSubtitle:
+    "Shaping tomorrow's leaders through excellence in education, character development, and innovative learning experiences.",
+  heroButtonPrimary: "Apply for Admission",
+  heroButtonSecondary: "Discover Our Legacy",
+  bannerImages: [],
+  autoRotate: true,
+  rotationInterval: 5,
+  stats: {
+    students: { number: "2,500+", label: "Students" },
+    programs: { number: "150+", label: "Programs" },
+    awards: { number: "25+", label: "Awards" },
+  },
+  fonts: {
+    heading: "Inter",
+    body: "Inter",
+  },
+};
+
+const spiralAnimation = {
+  v: "5.7.4",
+  fr: 60,
+  ip: 0,
+  op: 120,
+  w: 200,
+  h: 200,
+  nm: "Spiral",
+  ddd: 0,
+  assets: [],
+  layers: [
+    {
+      ddd: 0,
+      ind: 1,
+      ty: 4,
+      nm: "Circle1",
+      sr: 1,
+      ks: {
+        o: { a: 0, k: 80 },
+        r: { a: 1, k: [{ t: 0, s: [0], e: [360] }, { t: 120 }] },
+        p: { a: 0, k: [100, 100, 0] },
+        s: { a: 0, k: [100, 100, 100] },
+      },
+      ao: 0,
+      shapes: [
+        {
+          ty: "gr",
+          it: [
+            {
+              ty: "el",
+              p: { a: 0, k: [50, 0] },
+              s: { a: 0, k: [20, 20] },
+            },
+            {
+              ty: "fl",
+              c: { a: 0, k: [1, 0.42, 0.33, 1] },
+              o: { a: 0, k: 100 },
+            },
+          ],
+        },
+      ],
+      ip: 0,
+      op: 120,
+      st: 0,
     },
-    colors: {
-      primary: "#1e40af",
-      secondary: "#f59e0b",
-      accent: "#10b981",
-      background: "#ffffff",
-      text: "#1f2937"
-    },
-    fonts: {
-      heading: "Inter",
-      body: "Inter"
-    }
-  });
+  ],
+};
 
-  // State for branding data
-  const [brandingData, setBrandingData] = useState({
-    schoolName: "Royal Academy",
-    tagline: "Excellence in Education",
-    logoUrl: ""
-  });
-
+const Hero: React.FC = () => {
+  const [homepageData, setHomepageData] = useState<HomepageData>(defaultData);
+  const [branding, setBranding] = useState({ schoolName: "Royal Academy", logoUrl: "" });
+  const [isMuted, setIsMuted] = useState(true);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Load homepage data from Supabase
   useEffect(() => {
-    getSupabaseData('royal-academy-homepage', {
-      heroTitle: "Royal Academy",
-      heroSubtitle: "Shaping tomorrow's leaders through excellence in education, character development, and innovative learning experiences.",
-      heroButtonPrimary: "Apply for Admission",
-      heroButtonSecondary: "Discover Our Legacy",
-      bannerImages: [],
-      autoRotate: true,
-      rotationInterval: 5,
-      stats: {
-        students: { number: "2,500+", label: "Students" },
-        programs: { number: "150+", label: "Programs" },
-        awards: { number: "25+", label: "Awards" }
-      },
-      colors: {
-        primary: "#1e40af",
-        secondary: "#f59e0b",
-        accent: "#10b981",
-        background: "#ffffff",
-        text: "#1f2937"
-      },
-      fonts: {
-        heading: "Inter",
-        body: "Inter"
-      }
-    }).then(data => {
-      setHomepageData({
-        heroTitle: data.heroTitle || "Royal Academy",
-        heroSubtitle: data.heroSubtitle || "Shaping tomorrow's leaders through excellence in education, character development, and innovative learning experiences.",
-        heroButtonPrimary: data.heroButtonPrimary || "Apply for Admission",
-        heroButtonSecondary: data.heroButtonSecondary || "Discover Our Legacy",
-        bannerImages: Array.isArray(data.bannerImages) ? data.bannerImages : [],
-        autoRotate: data.autoRotate !== undefined ? data.autoRotate : true,
-        rotationInterval: data.rotationInterval || 5,
-        stats: {
-          students: { 
-            number: data.stats?.students?.number || "2,500+", 
-            label: data.stats?.students?.label || "Students" 
-          },
-          programs: { 
-            number: data.stats?.programs?.number || "150+", 
-            label: data.stats?.programs?.label || "Programs" 
-          },
-          awards: { 
-            number: data.stats?.awards?.number || "25+", 
-            label: data.stats?.awards?.label || "Awards" 
-          }
-        },
-        colors: {
-          primary: data.colors?.primary || "#1e40af",
-          secondary: data.colors?.secondary || "#f59e0b",
-          accent: data.colors?.accent || "#10b981",
-          background: data.colors?.background || "#ffffff",
-          text: data.colors?.text || "#1f2937"
-        },
-        fonts: {
-          heading: data.fonts?.heading || "Inter",
-          body: data.fonts?.body || "Inter"
-        }
-      });
-    });
-  }, []);
-
-  // Load branding data from Supabase
-  useEffect(() => {
-    getSupabaseData('royal-academy-branding', {
-      schoolName: "Royal Academy",
-      tagline: "Excellence in Education",
-      logoUrl: ""
-    }).then(data => {
-      setBrandingData({
-        schoolName: data.schoolName || "Royal Academy",
-        tagline: data.tagline || "Excellence in Education",
-        logoUrl: data.logoUrl || ""
-      });
-    });
-  }, []);
-
-
-  // Auto-rotate banner images
-  useEffect(() => {
-    if (homepageData.autoRotate && homepageData.bannerImages && homepageData.bannerImages.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentImageIndex((prev) => 
-          (prev + 1) % homepageData.bannerImages.length
-        );
-      }, homepageData.rotationInterval * 1000);
-
-      return () => clearInterval(interval);
+    const handleMouse = (e: MouseEvent) => setMousePosition({ x: e.clientX, y: e.clientY });
+    if (window.matchMedia && window.matchMedia("(hover: hover)").matches) {
+      window.addEventListener("mousemove", handleMouse);
+      return () => window.removeEventListener("mousemove", handleMouse);
     }
-  }, [homepageData.autoRotate, homepageData.rotationInterval, homepageData.bannerImages]);
+  }, []);
+
+  // load homepage content (supabase)
+  useEffect(() => {
+    getSupabaseData("royal-academy-homepage", defaultData).then((data: any) => {
+      if (!data) return;
+      setHomepageData({
+        ...defaultData,
+        heroTitle: data.heroTitle || defaultData.heroTitle,
+        heroSubtitle: data.heroSubtitle || defaultData.heroSubtitle,
+        heroButtonPrimary: data.heroButtonPrimary || defaultData.heroButtonPrimary,
+        heroButtonSecondary: data.heroButtonSecondary || defaultData.heroButtonSecondary,
+        bannerImages: Array.isArray(data.bannerImages) ? data.bannerImages : defaultData.bannerImages,
+        autoRotate: data.autoRotate ?? defaultData.autoRotate,
+        rotationInterval: data.rotationInterval || defaultData.rotationInterval,
+        stats: {
+          students: data.stats?.students || defaultData.stats.students,
+          programs: data.stats?.programs || defaultData.stats.programs,
+          awards: data.stats?.awards || defaultData.stats.awards,
+        },
+        fonts: data.fonts || defaultData.fonts,
+      });
+    });
+
+    getSupabaseData("royal-academy-branding", { schoolName: "Royal Academy", logoUrl: "" }).then((d: any) => {
+      if (!d) return;
+      setBranding({ schoolName: d.schoolName || "Royal Academy", logoUrl: d.logoUrl || "" });
+    });
+  }, []);
+
+  // banner rotate
+  useEffect(() => {
+    if (homepageData.autoRotate && homepageData.bannerImages.length > 1) {
+      const id = setInterval(() => {
+        setCurrentImageIndex((p) => (p + 1) % homepageData.bannerImages.length);
+      }, Math.max(2000, homepageData.rotationInterval * 1000));
+      return () => clearInterval(id);
+    }
+  }, [homepageData.bannerImages, homepageData.autoRotate, homepageData.rotationInterval]);
+
+  const currentBanner =
+    homepageData.bannerImages && homepageData.bannerImages.length
+      ? homepageData.bannerImages[currentImageIndex]
+      : branding.logoUrl || "/placeholder.svg";
 
   const stats = [
     { icon: Users, value: homepageData.stats.students.number, label: homepageData.stats.students.label },
@@ -167,92 +165,156 @@ const Hero = () => {
     { icon: Award, value: homepageData.stats.awards.number, label: homepageData.stats.awards.label },
   ];
 
-  const currentBannerImage = homepageData.bannerImages && homepageData.bannerImages.length > 0 
-    ? homepageData.bannerImages[currentImageIndex] 
-    : brandingData.logoUrl || '/placeholder.svg';
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    } else {
+      setIsMuted((s) => !s);
+    }
+  };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background with banner image rotation */}
-      <div className="absolute inset-0 z-0">
-        <div 
-          className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out"
-          style={{
-            backgroundImage: `url(${currentBannerImage})`,
-          }}
-        ></div>
-        <div className="absolute inset-0 bg-black/50"></div>
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-background via-secondary to-background">
+      {/* Cursor glow */}
+      <div
+        className="fixed w-96 h-96 rounded-full bg-primary/6 blur-3xl pointer-events-none transition-all duration-300 ease-out -z-10"
+        style={{ left: mousePosition.x - 192, top: mousePosition.y - 192 }}
+      />
+
+      {/* Subtle Lottie accents */}
+      <div className="absolute top-24 left-12 w-40 h-40 opacity-30 pointer-events-none animate-pulse">
+        <Lottie animationData={spiralAnimation} loop />
+      </div>
+      <div className="absolute bottom-24 right-20 w-48 h-48 opacity-20 pointer-events-none">
+        <Lottie animationData={spiralAnimation} loop />
       </div>
 
-      {/* Floating Elements - Hidden on mobile */}
-      <div className="absolute top-20 left-10 w-20 h-20 rounded-full bg-gold/20 animate-float hidden sm:block"></div>
-      <div className="absolute top-40 right-20 w-16 h-16 rounded-full bg-crimson/20 animate-float hidden sm:block" style={{ animationDelay: "2s" }}></div>
-      <div className="absolute bottom-40 left-20 w-12 h-12 rounded-full bg-gold/30 animate-float hidden sm:block" style={{ animationDelay: "4s" }}></div>
+      {/* Background banner + dim */}
+      <div className="absolute inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out"
+          style={{ backgroundImage: `url(${currentBanner})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-black/20" />
+      </div>
 
-      {/* Content */}
-      <div className="relative z-10 container-wide px-4 sm:px-6 py-8 sm:py-16 text-center">
-        <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
-          {/* Main Heading */}
-          <div className="space-y-4 sm:space-y-6">
-            <h1 
-              className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-heading font-bold leading-tight sm:leading-normal text-white"
-              style={{ fontFamily: homepageData.fonts.heading }}
-            >
-              {homepageData.heroTitle}
-            </h1>
-            <p 
-              className="text-sm xs:text-base sm:text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed px-2 sm:px-0 text-white"
-              style={{ fontFamily: homepageData.fonts.body }}
-            >
-              {homepageData.heroSubtitle}
-            </p>
-          </div>
+      <div className="container mx-auto px-6 lg:px-16 py-24 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Left: Headline */}
+          <div className="space-y-8">
+            <Badge variant="orange" className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              {branding.schoolName}
+            </Badge>
 
-          {/* Call to Action */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 justify-center items-center pt-4 sm:pt-8 px-2 sm:px-0">
-            <Button variant="hero" size="lg" asChild className="w-full sm:w-auto">
-              <Link to="/admissions" className="group">
-                {homepageData.heroButtonPrimary}
-                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild className="w-full sm:w-auto">
-              <Link to="/about">
-                {homepageData.heroButtonSecondary}
-              </Link>
-            </Button>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 pt-6 sm:pt-16 px-2 sm:px-0">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="card-3d p-4 text-center group"
+            <div className="space-y-6">
+              <h1
+                className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] text-white"
+                style={{ fontFamily: homepageData.fonts.heading }}
               >
-                <div className="flex flex-col items-center space-y-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-gold/20 to-gold/40 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <stat.icon className="h-5 w-5 sm:h-6 sm:w-6 text-gold" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xl sm:text-2xl md:text-3xl font-heading font-bold text-gradient-gold">
-                      {stat.value}
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground via-primary to-foreground">
+                  {homepageData.heroTitle.split(" ").slice(0, 2).join(" ")}
+                </span>
+                <span className="block mt-2">{homepageData.heroTitle.split(" ").slice(2).join(" ")}</span>
+              </h1>
+
+              <p
+                className="text-lg md:text-xl text-white/90 max-w-xl leading-relaxed"
+                style={{ fontFamily: homepageData.fonts.body }}
+              >
+                {homepageData.heroSubtitle}
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link to="/admissions" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full px-8 py-4 rounded-full bg-primary hover:bg-primary/90 shadow-lg">
+                  {homepageData.heroButtonPrimary}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+
+              <Link to="/about" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full px-8 py-4 rounded-full">
+                  {homepageData.heroButtonSecondary}
+                </Button>
+              </Link>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
+              {stats.map((s) => (
+                <div key={s.label} className="p-4 rounded-2xl bg-white/6 backdrop-blur-md border border-white/6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                      <s.icon className="w-6 h-6 text-primary" />
                     </div>
-                    <p className="text-muted-foreground text-sm sm:text-base">{stat.label}</p>
+                    <div>
+                      <div className="text-2xl md:text-3xl font-bold text-white">{s.value}</div>
+                      <div className="text-sm text-white/80">{s.label}</div>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Video + AI CTA card */}
+          <div className="relative space-y-6">
+            <Link to="/diagnostic-quiz">
+              <div className="relative p-5 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/20 hover:scale-[1.02] transition-transform shadow-lg cursor-pointer">
+                <div className="flex items-center gap-4">
+                  <div className="bg-primary/20 p-3 rounded-xl">
+                    <Brain className="w-7 h-7 text-primary" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="text-xl font-bold text-white">Take Free AI Quiz</div>
+                    <div className="text-sm text-white/80">Know your level in 5 minutes</div>
+                  </div>
+                  <ArrowRight className="w-6 h-6 text-white" />
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <Badge variant="secondary">AI-Powered</Badge>
+                  <Badge variant="secondary">Personalized Roadmap</Badge>
+                </div>
               </div>
-            ))}
+            </Link>
+
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+              <video
+                ref={videoRef}
+                className="w-full aspect-video object-cover"
+                autoPlay
+                muted={isMuted}
+                loop
+                playsInline
+                src="/videos/tution-intro.mp4"
+              />
+
+              <div className="absolute bottom-6 right-6 flex gap-3">
+                <Button
+                  size="icon"
+                  onClick={toggleMute}
+                  className="rounded-full w-12 h-12 bg-background/90 backdrop-blur-sm shadow-lg hover:scale-110"
+                >
+                  {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                </Button>
+              </div>
+
+              <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent pointer-events-none" />
+            </div>
+
+            <div className="absolute -top-4 -left-4 animate-bounce">
+              <Badge className="bg-primary text-primary-foreground px-4 py-2 shadow-xl">Learn Smarter. Achieve Faster.</Badge>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-gold/50 rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-gold/80 rounded-full mt-2 animate-pulse"></div>
-        </div>
-      </div>
+      {/* bottom gradient */}
+      <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-primary/6 to-transparent pointer-events-none" />
     </section>
   );
 };
